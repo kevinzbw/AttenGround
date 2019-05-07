@@ -73,8 +73,8 @@ text_decoder = TextDecoder(vocab_size=VOCABULARY_SIZE, embedding_dim=EMBED_DIM, 
 att_g = AttenGround(w_map, image_encoder, text_encoder, image_decoder, text_decoder, device)
 att_g.to(device)
 
-img_loss = nn.MSELoss()
-text_loss = nn.CrossEntropyLoss()
+img_criterion = nn.MSELoss()
+text_criterion = nn.CrossEntropyLoss()
 
 optimizer = torch.optim.SGD(att_g.parameters(), lr=LR, momentum=0.9, weight_decay=WEIGHT_DECAY)
 
@@ -83,21 +83,27 @@ def train(epoch):
     print("Training Epoch:", epoch)
     att_g.train()
     total_loss = 0
+    total_img_loss = 0
+    total_text_loss = 0
     for idx, (img, caps, info) in enumerate(train_dataset):
         img = img[None,]
         img = img.to(device)
-        loss = 0
+        img_loss, text_loss = 0, 0
         optimizer.zero_grad()
         for s in caps:
             seq = prepare_sequence(s, w_map, device, tag=True)
             r_img, r_text, attn = att_g(img, seq)
-            loss += img_loss(r_img, img) + text_loss(r_text, seq)
+            img_loss += img_criterion(r_img, img)
+            text_loss += text_criterion(r_text, seq)
+        loss = img_loss + text_loss
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
+        total_img_loss += img_loss.item()
+        total_text_loss += text_loss.item()
         step = idx + 1
         if step % LOG_FREQ == 0:
-            print("Step: %d, Loss: %.2f" % (step, total_loss/step))
+            print("Step: %d, Loss: %.2f, ImgLoss: %.2f, TextLoss: %.2f" % (step, total_loss/step, total_img_loss/step, total_text_loss/step))
 
 for epoch in range(NUM_EPOCH):
     train(epoch)
