@@ -56,7 +56,7 @@ transform_test = transforms.Compose([
     transforms.Normalize((0,0,0), (1,1,1)),
 ])
 
-train_dataset = Flickr30k(root=root, ann_root=ann_root, train=False, vocab_size=VOCABULARY_SIZE, transform=transform_train)
+train_dataset = Flickr30k(root=root, ann_root=ann_root, train=True, vocab_size=VOCABULARY_SIZE, transform=transform_train)
 trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=2)
 
 w_map = train_dataset.get_w_map()
@@ -97,7 +97,7 @@ def train(epoch):
         total_loss += loss.item()
         step = idx + 1
         if step % LOG_FREQ == 0:
-            print("Loss: %.2f" % (total_loss/step))
+            print("Step: %d, Loss: %.2f" % (step, total_loss/step))
 
 for epoch in range(NUM_EPOCH):
     train(epoch)
